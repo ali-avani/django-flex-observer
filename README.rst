@@ -1,7 +1,6 @@
-===================
-Django Flex observer
-===================
-
+====================
+Django Flex Observer
+====================
 
 .. image:: https://img.shields.io/pypi/v/flex_observer.svg
         :target: https://pypi.python.org/pypi/flex_observer
@@ -13,15 +12,10 @@ Django Flex observer
         :target: https://django-flex-observer.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
-
-
-
 Django project implementing the observer pattern for the database models
-
 
 * Free software: MIT license
 * Documentation: https://django-flex-observer.readthedocs.io.
-
 
 Features
 --------
