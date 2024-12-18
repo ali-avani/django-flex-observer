@@ -1,11 +1,13 @@
 from typing import Callable, ClassVar, Generic, List, Literal, Type, TypeVar
 
-from pydantic import BaseModel, Field, PrivateAttr
-
 from django.db.models import Model
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_save
+from django.dispatch import Signal
+from pydantic import BaseModel, Field, PrivateAttr
 
-M2mChangedActions = Literal["pre_add", "post_add", "pre_remove", "post_remove", "pre_clear", "post_clear"]
+M2mChangedActions = Literal[
+    "pre_add", "post_add", "pre_remove", "post_remove", "pre_clear", "post_clear"
+]
 InstanceType = TypeVar("InstanceType", bound=Model)
 FLEX_OBSERVER_CONTEXT_NAME = "_fo_context"
 
@@ -52,7 +54,9 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
     @classmethod
     def get_m2m_fields(cls):
         condition = (  # noqa
-            lambda field_name: (field := cls._observed_model._meta.get_field(field_name)).is_relation
+            lambda field_name: (
+                field := cls._observed_model._meta.get_field(field_name)
+            ).is_relation
             and field.many_to_many
         )
         return cls.get_fields(cls.get_observed_fields(), condition)
@@ -60,7 +64,9 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
     @classmethod
     def get_non_many_relation_fields(cls):
         condition = (  # noqa
-            lambda field_name: not (field := cls._observed_model._meta.get_field(field_name)).is_relation
+            lambda field_name: not (
+                field := cls._observed_model._meta.get_field(field_name)
+            ).is_relation
             or field.many_to_one
         )
 
@@ -71,12 +77,26 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
         return cls.get_observed_fields()
 
     @classmethod
-    def fields_changed(cls, *args, sender, old_instance, new_instance, changed_fields, **kwargs):
+    def fields_changed(
+        cls,
+        *args,
+        sender,
+        old_instance,
+        new_instance,
+        changed_fields,
+        **kwargs,
+    ):
         pass
+
+    @staticmethod
+    def connect_to_signal(signal: Signal, sender: InstanceType, handler: Callable):
+        return signal.connect(handler, sender=sender, weak=False)
 
     @classmethod
     def connect_many_to_many_observer(cls, field_name):
-        assert (field := cls._observed_model._meta.get_field(field_name)).is_relation and field.many_to_many
+        assert (
+            field := cls._observed_model._meta.get_field(field_name)
+        ).is_relation and field.many_to_many
 
         through = field.remote_field.through
 
@@ -90,7 +110,7 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
                 changed_fields=[field_name],
             )
 
-        return m2m_changed.connect(m2m_observer, sender=through)
+        return cls.connect_to_signal(m2m_changed, through, m2m_observer)
 
     @classmethod
     def connect_non_many_observer(cls, field_names):
@@ -99,7 +119,11 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
             new_instance = instance
             changed_fields = ["*"]
 
-            if old_instance and not (changed_fields := cls.get_changed_fields(old_instance, new_instance, field_names)):
+            if old_instance and not (
+                changed_fields := cls.get_changed_fields(
+                    old_instance, new_instance, field_names
+                )
+            ):
                 return
 
             context = getattr(instance, FLEX_OBSERVER_CONTEXT_NAME, {})
@@ -107,7 +131,9 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
             setattr(instance, FLEX_OBSERVER_CONTEXT_NAME, context)
 
         def post_save_observer(sender, instance, **kwargs):
-            if changed_fields := getattr(instance, FLEX_OBSERVER_CONTEXT_NAME, {}).get("changed_fields"):
+            if changed_fields := getattr(instance, FLEX_OBSERVER_CONTEXT_NAME, {}).get(
+                "changed_fields"
+            ):
                 cls.fields_changed(
                     sender=sender,
                     instance=instance,
@@ -121,9 +147,9 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
                 changed_fields=["*"],
             )
 
-        pre_save.connect(pre_save_observer, sender=cls._observed_model)
-        post_save.connect(post_save_observer, sender=cls._observed_model)
-        post_delete.connect(post_delete_observer, sender=cls._observed_model)
+        cls.connect_to_signal(pre_save, cls._observed_model, pre_save_observer)
+        cls.connect_to_signal(post_save, cls._observed_model, post_save_observer)
+        cls.connect_to_signal(post_delete, cls._observed_model, post_delete_observer)
 
     @classmethod
     def connect(cls):
