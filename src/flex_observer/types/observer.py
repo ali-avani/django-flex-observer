@@ -5,9 +5,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save, pre_sa
 from django.dispatch import Signal
 from pydantic import BaseModel, Field, PrivateAttr
 
-M2mChangedActions = Literal[
-    "pre_add", "post_add", "pre_remove", "post_remove", "pre_clear", "post_clear"
-]
+M2mChangedActions = Literal["pre_add", "post_add", "pre_remove", "post_remove", "pre_clear", "post_clear"]
 InstanceType = TypeVar("InstanceType", bound=Model)
 FLEX_OBSERVER_CONTEXT_NAME = "_fo_context"
 
@@ -54,9 +52,7 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
     @classmethod
     def get_m2m_fields(cls):
         condition = (  # noqa
-            lambda field_name: (
-                field := cls._observed_model._meta.get_field(field_name)
-            ).is_relation
+            lambda field_name: (field := cls._observed_model._meta.get_field(field_name)).is_relation
             and field.many_to_many
         )
         return cls.get_fields(cls.get_observed_fields(), condition)
@@ -64,9 +60,7 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
     @classmethod
     def get_non_many_relation_fields(cls):
         condition = (  # noqa
-            lambda field_name: not (
-                field := cls._observed_model._meta.get_field(field_name)
-            ).is_relation
+            lambda field_name: not (field := cls._observed_model._meta.get_field(field_name)).is_relation
             or field.many_to_one
         )
 
@@ -94,9 +88,7 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
 
     @classmethod
     def connect_many_to_many_observer(cls, field_name):
-        assert (
-            field := cls._observed_model._meta.get_field(field_name)
-        ).is_relation and field.many_to_many
+        assert (field := cls._observed_model._meta.get_field(field_name)).is_relation and field.many_to_many
 
         through = field.remote_field.through
 
@@ -119,11 +111,7 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
             new_instance = instance
             changed_fields = ["*"]
 
-            if old_instance and not (
-                changed_fields := cls.get_changed_fields(
-                    old_instance, new_instance, field_names
-                )
-            ):
+            if old_instance and not (changed_fields := cls.get_changed_fields(old_instance, new_instance, field_names)):
                 return
 
             context = getattr(instance, FLEX_OBSERVER_CONTEXT_NAME, {})
@@ -131,9 +119,7 @@ class FieldsObserver(BaseModel, Generic[InstanceType]):
             setattr(instance, FLEX_OBSERVER_CONTEXT_NAME, context)
 
         def post_save_observer(sender, instance, **kwargs):
-            if changed_fields := getattr(instance, FLEX_OBSERVER_CONTEXT_NAME, {}).get(
-                "changed_fields"
-            ):
+            if changed_fields := getattr(instance, FLEX_OBSERVER_CONTEXT_NAME, {}).pop("changed_fields", None):
                 cls.fields_changed(
                     sender=sender,
                     instance=instance,
