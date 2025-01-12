@@ -2,15 +2,8 @@
 Django Flex Observer
 ====================
 
-.. image:: https://img.shields.io/pypi/v/flex_observer.svg
-        :target: https://pypi.python.org/pypi/flex_observer
-
-.. image:: https://img.shields.io/travis/ali-avani/flex_observer.svg
-        :target: https://travis-ci.com/ali-avani/flex_observer
-
-.. image:: https://readthedocs.org/projects/django-flex-observer/badge/?version=latest
-        :target: https://django-flex-observer.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
+.. image:: https://img.shields.io/pypi/v/django-flex-observer.svg
+        :target: https://pypi.python.org/pypi/django-flex-observer
 
 Django project implementing the observer pattern for the database models
 
